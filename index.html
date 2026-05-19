@@ -287,6 +287,32 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
+    .suno-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #ff2d78, #b44fff, #00d4ff);
+      background-size: 200% 100%;
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      cursor: pointer;
+      animation: flow 3s linear infinite;
+      transition: opacity .18s, transform .18s;
+    }
+    .suno-btn:hover  { opacity: .88; transform: scale(1.01); }
+    .suno-btn:active { opacity: .7;  transform: scale(.98); }
+    .suno-hint {
+      text-align: center;
+      color: var(--dim);
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+
     footer {
       text-align: center;
       color: var(--dim);
@@ -431,9 +457,14 @@
     <div class="prompt-box" id="style-out"></div>
     <div class="tag-row" id="tag-row"></div>
     <button class="copy-btn" onclick="copyStyle()">▶ COPY STYLE</button>
+
+    <div style="height:22px"></div>
+
+    <button class="suno-btn" onclick="openSuno()">🎵 SUNOで作る</button>
+    <div class="suno-hint">タップするとLYRICS＋STYLEをコピーしてSUNOを開きます</div>
   </div>
 
-  <footer>AMEN GEN v1.0.3 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
+  <footer>AMEN GEN v1.0.4 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
 </div>
 
 <div class="toast" id="toast">COPIED ✓</div>
@@ -667,13 +698,22 @@ function gen() {
 // ══════════════════════════════════════════
 //  COPY
 // ══════════════════════════════════════════
-function toast() {
+function toast() { toastMsg('COPIED ✓'); }
+function toastMsg(msg) {
   const el = document.getElementById('toast');
+  el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2000);
+  setTimeout(() => el.classList.remove('show'), 2500);
 }
 function copyLyrics() { navigator.clipboard.writeText(document.getElementById('lyrics-out').textContent); toast(); }
 function copyStyle()  { navigator.clipboard.writeText(document.getElementById('style-out').textContent);  toast(); }
+function openSuno() {
+  const lyrics = document.getElementById('lyrics-out').textContent;
+  const style  = document.getElementById('style-out').textContent;
+  navigator.clipboard.writeText(lyrics + '\n\nStyle: ' + style);
+  window.open('https://suno.com/create', '_blank');
+  toastMsg('COPIED! SUNOにペーストしてね');
+}
 
 init();
 </script>
