@@ -276,6 +276,34 @@
     .copy-btn:hover { opacity: .85; }
     .copy-btn:active { opacity: .65; }
 
+    .btn-row { display: flex; gap: 8px; margin-top: 13px; align-items: center; flex-wrap: wrap; }
+    .rand-btn {
+      padding: 10px 18px;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .rand-btn:hover { background: rgba(155,114,204,.15); }
+    .reset-lyrics {
+      padding: 6px 12px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all .14s;
+    }
+    .reset-lyrics:hover { border-color: var(--dim); color: var(--text); }
+
     /* ── Toast ── */
     .toast {
       position: fixed;
@@ -491,7 +519,11 @@
     <div class="card-title">📋 OUTPUT</div>
     <div class="out-label">① LYRICS / STRUCTURE — SUNOの歌詞欄にペースト:</div>
     <div class="prompt-box" id="lyrics-out"></div>
-    <button class="copy-btn" onclick="copyLyrics()">▶ COPY LYRICS</button>
+    <div class="btn-row">
+      <button class="copy-btn" onclick="copyLyrics()">▶ COPY LYRICS</button>
+      <button class="rand-btn" onclick="randomizeLyrics()">🎲 RANDOM LYRICS</button>
+      <button class="reset-lyrics" id="reset-lyrics-btn" style="display:none" onclick="resetLyrics()">× リセット</button>
+    </div>
 
     <div style="height:18px"></div>
 
@@ -618,7 +650,382 @@ const S = {
   elements: ['amen break drums','chopped breaks'],
   flavor: [],
   ending: 'standard',
+  customLyrics: null,
 };
+
+// ══════════════════════════════════════════
+//  LYRIC TEMPLATES
+// ══════════════════════════════════════════
+const LYRIC_TEMPLATES = {
+  ragga: [
+    `[Verse 1]
+Sound system warriors roll through the night
+Amen break rising, feel the bassline's might
+Jungle massive gather under neon lights
+We come fi conquer, we come fi ignite
+
+[Chorus]
+Jungle fever burning in our veins
+Riddim of the warriors, breaking all the chains
+Feel the bass below, let the rhythm reign
+Selecta pull it up and start again
+
+[Verse 2]
+From the concrete jungle to the dance floor heat
+Every MC chanting to the amen beat
+Digital siren wailing down the street
+Forward ever backward never, feel complete
+
+[Chorus]
+Jungle fever burning in our veins
+Riddim of the warriors, breaking all the chains
+Feel the bass below, let the rhythm reign
+Selecta pull it up and start again
+
+[Bridge]
+Rewind — pull it back, rewind
+Forward — push it hard, forward`,
+
+    `[Verse 1]
+Heavy dub pressure rolling through the air
+Bass frequency hitting, catch you if you dare
+Psychedelic echoes bouncing everywhere
+Tape delay spiraling beyond compare
+
+[Chorus]
+Feel the dub, feel the weight
+Bass so heavy, seal your fate
+Feel the dub, don't resist
+Heavy sound through the mist
+
+[Verse 2]
+Forty hertz vibration shaking up the floor
+Sub bass penetrating through the concrete core
+Infinite feedback loop opening a door
+Sound clash warriors coming back for more
+
+[Chorus]
+Feel the dub, feel the weight
+Bass so heavy, seal your fate
+Feel the dub, don't resist
+Heavy sound through the mist
+
+[Bridge]
+The bass never ends — the bass never ends
+Echo on echo — the signal descends`,
+
+    `[Verse 1]
+Selecta on the wheels, we spin the amen break
+Jungle riddim rolling, feel the earth begin to shake
+Warriors come forward for the music's sake
+We build this movement, nothing gonna make it break
+
+[Chorus]
+Jungle all the way, massive unite
+Amen break chopping through the night
+Feel the bass, feel the light
+Jungle massive, jungle right
+
+[Verse 2]
+Digital siren rising through the smoke
+Laser sound clash cutting, hear the airhorn spoke
+Bass drop heavy as the session hit its stroke
+Jungle never dying, it's a fire we stoke
+
+[Chorus]
+Jungle all the way, massive unite
+Amen break chopping through the night
+Feel the bass, feel the light
+Jungle massive, jungle right
+
+[Bridge]
+Sound clash — we never fall
+Bass line — answer the call`,
+  ],
+
+  dnb: [
+    `[Verse 1]
+Two o'clock and the city starts to breathe
+Bass line rolling underneath the concrete weave
+Feel the pressure from below begin to heave
+Two-step movement, we were born to never leave
+
+[Chorus]
+Drum and bass, feel the movement flow
+Rolling breaks, let the people know
+Drum and bass, let the pressure grow
+Underground forever, watch the rhythm go
+
+[Verse 2]
+Amen break cascading through the speaker stack
+Rolling sub bass pushing, there is no going back
+Every snare hit cutting, keeping us on track
+The movement never falters, nothing lacks
+
+[Chorus]
+Drum and bass, feel the movement flow
+Rolling breaks, let the people know
+Drum and bass, let the pressure grow
+Underground forever, watch the rhythm go
+
+[Bridge]
+Feel it — feel it — feel the drop
+Rhythm never gonna stop`,
+
+    `[Verse 1]
+Underground the city holds its breath tonight
+Bass frequencies vibrating out of sight
+Reese bass rolling, cutting through the night
+Underground massive, we come fi ignite
+
+[Chorus]
+In the underground we move as one
+Rolling bass and breaks, the night has just begun
+In the underground we never run
+Amen massive forward till the morning sun
+
+[Verse 2]
+Filtered hi-hats dancing through the air
+Orchestral stabs descending from somewhere
+Sub bass pressure building beyond compare
+Underground movement, we are always there
+
+[Chorus]
+In the underground we move as one
+Rolling bass and breaks, the night has just begun
+In the underground we never run
+Amen massive forward till the morning sun
+
+[Bridge]
+Underground — underground — deeper still
+Bass line rising — feel the thrill`,
+
+    `[Verse 1]
+Deep in the frequency, forty hertz below
+Liquid bass line rolling with a gentle glow
+Atmospheric pads begin to ebb and flow
+Drum and bass massive putting on a show
+
+[Chorus]
+Deep pressure, feel the wave
+Drum and bass, feel the rave
+Deep pressure, hold the line
+Underground to the end of time
+
+[Verse 2]
+Snare drum rushing through the break like rain
+Chopped amen pattern driving through the brain
+Feel the bass note climbing once again
+Underground massive never feels the pain
+
+[Chorus]
+Deep pressure, feel the wave
+Drum and bass, feel the rave
+Deep pressure, hold the line
+Underground to the end of time
+
+[Bridge]
+Wave after wave — no end in sight
+Carry us through — into the light`,
+  ],
+
+  breakcore: [
+    `[Verse 1]
+Signal fragmenting across the grid tonight
+Every amen slice a shard of broken light
+Static rising as the circuits lose the fight
+Breakcore massive pushing system to its height
+
+[Chorus]
+Break it down, shatter every beat
+Chaos rising, cannot be complete
+Break it down, feel the data bleed
+Amen chaos is all that we need
+
+[Verse 2]
+Distortion feeding back into the core
+Snare rushing faster than it was before
+Glitch cascading, opening every door
+Ultra-chopped and fractured to the floor
+
+[Chorus]
+Break it down, shatter every beat
+Chaos rising, cannot be complete
+Break it down, feel the data bleed
+Amen chaos is all that we need
+
+[Bridge]
+Fragment — scatter — collapse — repeat
+Fragment — scatter — collapse — delete`,
+
+    `[Verse 1]
+Ten million snares descending from the sky
+Ultra-chopped and scattered, asking only why
+Feedback infinite, reaching up on high
+Digital destruction never says goodbye
+
+[Chorus]
+Chaos reigns, order falls
+Static screaming through the halls
+Chaos reigns, break the code
+Amen pattern overload
+
+[Verse 2]
+Drill and bass fragmenting through the noise
+Every beat corrupted, lost among the void
+Amen loop collapsing into static
+Rapid fire edits, automatic
+
+[Chorus]
+Chaos reigns, order falls
+Static screaming through the halls
+Chaos reigns, break the code
+Amen pattern overload
+
+[Bridge]
+No signal — no signal — only noise
+No signal — no signal — static destroys`,
+
+    `[Verse 1]
+Maximum intensity at the breaking point
+Every sample fractured, out of joint
+Amen break in pieces, none anointed
+Breakcore massive, maximum appointed
+
+[Chorus]
+Shatter, fragment, break apart
+Chaos drumming at the heart
+Shatter, fragment, lose control
+Maximum intensity takes its toll
+
+[Verse 2]
+Rapid fire edits, no space left to breathe
+Distorted snare hits, static in the weave
+Digital collapse, no time left to grieve
+Breakcore pressure you cannot believe
+
+[Chorus]
+Shatter, fragment, break apart
+Chaos drumming at the heart
+Shatter, fragment, lose control
+Maximum intensity takes its toll
+
+[Bridge]
+Beyond the limit — beyond the edge
+Signal falling from the ledge`,
+  ],
+
+  dark: [
+    `[Verse 1]
+Mechanical precision in the cold machine
+Neurofunk bassline, robotic and mean
+Technical programming, nothing in between
+Darkstep movement, darker than it's been
+
+[Chorus]
+Cold machine, feel the weight
+Technical rhythm seals your fate
+Cold machine, iron beat
+Neurofunk massive, incomplete
+
+[Verse 2]
+Morphing bass wobble twisting through the dark
+Industrial precision, hit you like a spark
+Dystopian movement, leaving its mark
+Technical drum and bass cuts through the dark
+
+[Chorus]
+Cold machine, feel the weight
+Technical rhythm seals your fate
+Cold machine, iron beat
+Neurofunk massive, incomplete
+
+[Bridge]
+Machine rises — machine endures
+Nothing human — nothing pure`,
+
+    `[Verse 1]
+Dystopian signal broadcast through the night
+Techstep precision, cold industrial light
+Menacing breaks advancing left and right
+Darkstep massive marching through the fight
+
+[Chorus]
+Dark and heavy, feel the grind
+Leave all weakness far behind
+Dark and heavy, steel and bass
+Dystopian rhythm sets the pace
+
+[Verse 2]
+Compressed drum pattern hammering the floor
+Robotic bassline knocking at the door
+Industrial cadence delivering more
+Techstep massive what we're heading for
+
+[Chorus]
+Dark and heavy, feel the grind
+Leave all weakness far behind
+Dark and heavy, steel and bass
+Dystopian rhythm sets the pace
+
+[Bridge]
+Forward march — no turning back
+Techstep iron on the track`,
+  ],
+
+  footwork: [
+    `[Verse 1]
+Chicago footwork, rapid hi-hat roll
+Juke music taking back control
+Sample chopped and scattered, body and soul
+Footwork massive, cannot be controlled
+
+[Chorus]
+Footwork, juke, rapid fire beat
+Polyrhythm moving every feet
+Footwork, juke, cannot be stopped
+160 BPM till the track gets dropped
+
+[Verse 2]
+Rapid patterns weaving through the floor
+Chicago rhythms knocking at the door
+Juke music giving more and more
+Footwork massive coming to the core
+
+[Chorus]
+Footwork, juke, rapid fire beat
+Polyrhythm moving every feet
+Footwork, juke, cannot be stopped
+160 BPM till the track gets dropped
+
+[Bridge]
+Step — step — polyrhythm rise
+Footwork massive under Chicago skies`,
+  ],
+};
+
+function pickLyricTemplate() {
+  const g = S.genre;
+  let pool;
+  if (g === 'ragga' || g === 'jungle') pool = LYRIC_TEMPLATES.ragga;
+  else if (g === 'breakcore')          pool = LYRIC_TEMPLATES.breakcore;
+  else if (g === 'darkstep' || g === 'neurofunk' || g === 'techstep') pool = LYRIC_TEMPLATES.dark;
+  else if (g === 'footwork')           pool = LYRIC_TEMPLATES.footwork;
+  else                                 pool = LYRIC_TEMPLATES.dnb;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function randomizeLyrics() {
+  S.customLyrics = pickLyricTemplate();
+  document.getElementById('lyrics-out').textContent = S.customLyrics;
+  document.getElementById('reset-lyrics-btn').style.display = 'inline-block';
+}
+
+function resetLyrics() {
+  S.customLyrics = null;
+  document.getElementById('reset-lyrics-btn').style.display = 'none';
+  gen();
+}
 
 // ══════════════════════════════════════════
 //  INIT
@@ -797,9 +1204,10 @@ function buildStructure() {
 function gen() {
   const tags   = buildTags();
   const style  = tags.join(', ');
-  const struct = buildStructure();
 
-  document.getElementById('lyrics-out').textContent = struct;
+  if (!S.customLyrics) {
+    document.getElementById('lyrics-out').textContent = buildStructure();
+  }
   document.getElementById('style-out').textContent  = style;
   document.getElementById('tag-row').innerHTML       = tags.map(t => `<span class="tag">${t}</span>`).join('');
 }
