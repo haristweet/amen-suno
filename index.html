@@ -17,6 +17,20 @@
       --dim: #606080;
       --chip-bg: #1a1a2c;
     }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f2f2f8;
+        --surface: #ffffff;
+        --surface2: #eaeaf4;
+        --border: #cccce0;
+        --primary: #d4005e;
+        --secondary: #007aaa;
+        --accent: #8822cc;
+        --text: #18182a;
+        --dim: #7070a0;
+        --chip-bg: #e8e8f4;
+      }
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -419,7 +433,7 @@
     <button class="copy-btn" onclick="copyStyle()">▶ COPY STYLE</button>
   </div>
 
-  <footer>AMEN GEN v1.0.1 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
+  <footer>AMEN GEN v1.0.2 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
 </div>
 
 <div class="toast" id="toast">COPIED ✓</div>
