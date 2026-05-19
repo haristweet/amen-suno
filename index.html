@@ -206,6 +206,13 @@
       color: #fff;
     }
 
+    /* ── Single-select ending chips ── */
+    .chip.ending-chip.on {
+      background: linear-gradient(135deg, rgba(0,212,255,.22), rgba(180,79,255,.22));
+      border-color: var(--secondary);
+      color: #fff;
+    }
+
     /* ── Output ── */
     .out-card {
       background: var(--surface);
@@ -338,6 +345,7 @@
       <button class="preset-btn" data-p="acid-explosion">⚗️ アシッド大爆発</button>
       <button class="preset-btn" data-p="dub-max">🌊 ダブ感満点</button>
       <button class="preset-btn" data-p="breakcore-chaos">💀 ブレイクコアカオス</button>
+      <button class="preset-btn" data-p="ragga-destruction">🔥 ラガ破壊</button>
       <button class="preset-btn" data-p="neuro-step">🤖 ニューロステップ</button>
       <button class="preset-btn" data-p="euphoric-rave">✨ ユーフォリックレイヴ</button>
       <button class="preset-btn" data-p="cyber-glitch">👾 サイバーグリッチ</button>
@@ -412,7 +420,7 @@
       <div class="chip" data-v="vocal chops">Vocal Chops</div>
       <div class="chip" data-v="orchestral stabs">Orchestral Stabs</div>
       <div class="chip" data-v="atmospheric pads">Atmospheric Pads</div>
-      <div class="chip" data-v="heavy sub bass">Heavy Subs</div>
+      <div class="chip" data-v="deep 40Hz heavy sub bass">Deep 40Hz Sub</div>
       <div class="chip" data-v="pitched drums">Pitched Drums</div>
       <div class="chip" data-v="timestretched samples">Timestretching</div>
       <div class="chip" data-v="distorted snare">Distorted Snare</div>
@@ -422,6 +430,11 @@
       <div class="chip" data-v="synth lead">Synth Lead</div>
       <div class="chip" data-v="hoover synth">Hoover Synth</div>
       <div class="chip" data-v="breakbeat percussion">Breakbeat Perc</div>
+      <div class="chip" data-v="digital dub siren">Digital Dub Siren</div>
+      <div class="chip" data-v="massive airhorn">Massive Airhorn</div>
+      <div class="chip" data-v="soundclash laser fx">Soundclash Laser FX</div>
+      <div class="chip" data-v="psychedelic tape delay">Tape Delay</div>
+      <div class="chip" data-v="infinite feedback loops">Infinite Feedback</div>
     </div>
   </div>
 
@@ -441,6 +454,21 @@
       <div class="chip" data-v="cinematic tension, dramatic orchestral swells, epic scale">シネマティック</div>
       <div class="chip" data-v="lo-fi tape degradation, vinyl crackle, warm saturation">ローファイ感</div>
       <div class="chip" data-v="extreme pitch shifting, chipmunk effects, pitched-up breaks">ピッチ狂い</div>
+      <div class="chip" data-v="strictly locked metronomic timing, sample-accurate grid precision">タイミング完璧</div>
+      <div class="chip" data-v="1200% heavy dub saturation, crushing dub compression, maximum weight">ダブ飽和1200%</div>
+      <div class="chip" data-v="rapid-fire drum edits, relentless amen break chopping, ten-million snare rushes">スネア嵐</div>
+      <div class="chip" data-v="32-bit UHD audio, professional studio remastered, ultra-high resolution mastering">UHDマスタリング</div>
+    </div>
+  </div>
+
+  <!-- Ending -->
+  <div class="card">
+    <div class="card-title">🔚 ENDING TYPE — エンディングの種類</div>
+    <div class="chips" id="ending">
+      <div class="chip ending-chip on" data-v="standard">Standard</div>
+      <div class="chip ending-chip" data-v="hard-cut">Abrupt Hard Cut</div>
+      <div class="chip ending-chip" data-v="fade">Fade Out</div>
+      <div class="chip ending-chip" data-v="reverse-fade">Reverse Fade</div>
     </div>
   </div>
 
@@ -464,7 +492,7 @@
     <div class="suno-hint">タップするとLYRICS＋STYLEをコピーしてSUNOを開きます</div>
   </div>
 
-  <footer>AMEN GEN v1.0.4 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
+  <footer>AMEN GEN v1.1.0 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
 </div>
 
 <div class="toast" id="toast">COPIED ✓</div>
@@ -482,7 +510,7 @@ const GENRES = {
   darkstep:  { tags: ['darkstep', 'dark drum and bass', 'menacing breaks', 'dystopian DnB'], vibe: 'menacing dark atmosphere with powerful compressed drums' },
   neurofunk: { tags: ['neurofunk', 'technical DnB', 'robotic bass wobble', 'complex drum programming'], vibe: 'technical complex programming with morphing neurofunk bass' },
   techstep:  { tags: ['techstep', 'techno-influenced DnB', 'industrial precision beats', 'mechanical rhythm'], vibe: 'mechanical grid-locked techno-influenced breakbeats' },
-  ragga:     { tags: ['ragga jungle', 'dancehall breakbeat', 'reggae jungle', 'MC vocals'], vibe: 'reggae influenced chopped jungle with patois toasting' },
+  ragga:     { tags: ['ragga jungle', 'original ragga jungle', 'dancehall breakbeat', 'reggae jungle', 'amen breakcore'], vibe: 'original ragga jungle with relentless amen break chopping and dub pressure' },
   footwork:  { tags: ['footwork', 'juke', 'chicago footwork', 'rapid hi-hat polyrhythm'], vibe: 'rapid 160 BPM footwork patterns with chopped samples' },
 };
 
@@ -491,49 +519,73 @@ const PRESETS = {
     genre:'jungle', bpm:170,
     mood:['chaotic','aggressive','energetic'],
     elements:['amen break drums','chopped breaks','vocal chops','horn stabs'],
-    flavor:[]
+    flavor:[],
+    ending:'standard'
   },
   'acid-explosion': {
     genre:'jungle', bpm:165,
     mood:['chaotic','aggressive','trippy'],
     elements:['amen break drums','chopped breaks','acid 303 bassline','vocal chops'],
-    flavor:['screaming acid TB-303, squelching resonant filter sweeps']
+    flavor:['screaming acid TB-303, squelching resonant filter sweeps'],
+    ending:'standard'
   },
   'dub-max': {
     genre:'dnb', bpm:140,
     mood:['hypnotic','atmospheric','melancholic'],
     elements:['amen break drums','sub bass','atmospheric pads','reese bass'],
-    flavor:['heavy reverb, dub echo, spacious sound design','reggae influence, heavy one-drop bass, skank rhythm']
+    flavor:['heavy reverb, dub echo, spacious sound design','reggae influence, heavy one-drop bass, skank rhythm'],
+    ending:'standard'
   },
   'breakcore-chaos': {
     genre:'breakcore', bpm:195,
     mood:['chaotic','aggressive','industrial'],
-    elements:['amen break drums','chopped breaks','distorted snare','heavy sub bass'],
-    flavor:['glitch artifacts, digital noise, stuttering','extreme distortion, saturation overdrive, grit and grime']
+    elements:['amen break drums','chopped breaks','distorted snare','deep 40Hz heavy sub bass'],
+    flavor:['glitch artifacts, digital noise, stuttering','extreme distortion, saturation overdrive, grit and grime'],
+    ending:'hard-cut'
+  },
+  'ragga-destruction': {
+    genre:'ragga', bpm:174,
+    mood:['dark','aggressive','chaotic'],
+    elements:[
+      'amen break drums','chopped breaks','distorted snare',
+      'deep 40Hz heavy sub bass','digital dub siren','massive airhorn',
+      'soundclash laser fx','psychedelic tape delay','infinite feedback loops'
+    ],
+    flavor:[
+      'strictly locked metronomic timing, sample-accurate grid precision',
+      '1200% heavy dub saturation, crushing dub compression, maximum weight',
+      'rapid-fire drum edits, relentless amen break chopping, ten-million snare rushes',
+      '32-bit UHD audio, professional studio remastered, ultra-high resolution mastering'
+    ],
+    ending:'hard-cut'
   },
   'neuro-step': {
     genre:'neurofunk', bpm:174,
     mood:['dark','industrial','tense'],
     elements:['amen break drums','reese bass','sub bass','filtered hi-hats'],
-    flavor:['granular textures, time-stretched clouds, micro-editing']
+    flavor:['granular textures, time-stretched clouds, micro-editing'],
+    ending:'standard'
   },
   'euphoric-rave': {
     genre:'dnb', bpm:174,
     mood:['euphoric','energetic','atmospheric'],
     elements:['amen break drums','chopped breaks','orchestral stabs','atmospheric pads','hoover synth'],
-    flavor:['classic rave stabs, hoovers, vintage 90s rave energy']
+    flavor:['classic rave stabs, hoovers, vintage 90s rave energy'],
+    ending:'standard'
   },
   'cyber-glitch': {
     genre:'breakcore', bpm:188,
     mood:['chaotic','industrial','tense'],
     elements:['amen break drums','chopped breaks','distorted snare','synth lead'],
-    flavor:['glitch artifacts, digital noise, stuttering','heavy flanger, phaser sweeps, intense modulation fx']
+    flavor:['glitch artifacts, digital noise, stuttering','heavy flanger, phaser sweeps, intense modulation fx'],
+    ending:'hard-cut'
   },
   'liquid-flow': {
     genre:'liquid', bpm:174,
     mood:['atmospheric','melancholic','dreamy'],
     elements:['amen break drums','chopped breaks','atmospheric pads','rhodes piano'],
-    flavor:['lush reverb tails, cavernous spaces, infinite decay']
+    flavor:['lush reverb tails, cavernous spaces, infinite decay'],
+    ending:'fade'
   }
 };
 
@@ -546,6 +598,7 @@ const S = {
   mood: ['euphoric','aggressive'],
   elements: ['amen break drums','chopped breaks'],
   flavor: [],
+  ending: 'standard',
 };
 
 // ══════════════════════════════════════════
@@ -579,10 +632,19 @@ function init() {
     gen();
   }));
 
-  // Mood chips
+  // Multi-select chips
   bindChips('mood', S.mood);
   bindChips('elements', S.elements);
   bindChips('flavor', S.flavor);
+
+  // Single-select ending chips
+  document.querySelectorAll('#ending .chip').forEach(c => c.addEventListener('click', () => {
+    S.ending = c.dataset.v;
+    document.querySelectorAll('#ending .chip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    clearPresets();
+    gen();
+  }));
 
   // Flavor presets
   document.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => {
@@ -620,9 +682,10 @@ function applyPreset(key, btn) {
 
   S.genre = p.genre;
   S.bpm   = p.bpm;
-  S.mood.length = 0;    S.mood.push(...p.mood);
+  S.mood.length = 0;     S.mood.push(...p.mood);
   S.elements.length = 0; S.elements.push(...p.elements);
-  S.flavor.length = 0;  S.flavor.push(...p.flavor);
+  S.flavor.length = 0;   S.flavor.push(...p.flavor);
+  S.ending = p.ending || 'standard';
 
   document.getElementById('genre').value = p.genre;
   document.getElementById('bpm-range').value = p.bpm;
@@ -632,6 +695,11 @@ function applyPreset(key, btn) {
   syncChips('mood',     p.mood);
   syncChips('elements', p.elements);
   syncChips('flavor',   p.flavor);
+
+  // Sync ending (single-select)
+  document.querySelectorAll('#ending .chip').forEach(c => {
+    c.classList.toggle('on', c.dataset.v === S.ending);
+  });
 
   clearPresets();
   btn.classList.add('active');
@@ -655,6 +723,14 @@ function buildTags() {
   S.elements.forEach(e => tags.push(e));
   S.flavor.forEach(f => f.split(',').map(s => s.trim()).forEach(t => tags.push(t)));
 
+  if (S.ending === 'hard-cut') {
+    tags.push('abrupt hard cut ending', 'no outro expansion');
+  } else if (S.ending === 'fade') {
+    tags.push('fade out ending');
+  } else if (S.ending === 'reverse-fade') {
+    tags.push('reverse fade ending');
+  }
+
   // Deduplicate keeping order
   return [...new Map(tags.map(t => [t.toLowerCase(), t])).values()];
 }
@@ -664,6 +740,7 @@ function buildStructure() {
   const dark   = S.mood.some(m => ['dark','industrial','dystopian','tense'].includes(m));
   const chaos  = S.mood.includes('chaotic') || S.genre === 'breakcore';
   const melody = S.elements.some(e => ['atmospheric pads','rhodes piano','synth lead','orchestral stabs','hoover synth'].includes(e));
+  const hardCut = S.ending === 'hard-cut';
 
   const lines = [];
   lines.push(`[Intro]\n[${g.vibe}, filter slowly opening]`);
@@ -680,7 +757,15 @@ function buildStructure() {
     lines.push(`[Drop 2]\n[bigger than before, full arrangement, crowd moment]`);
   }
 
-  lines.push(`[Outro]\n[${dark ? 'dark descending fade, dystopian silence' : 'euphoric wind-down, crowd energy released'}]`);
+  if (hardCut) {
+    lines.push(`[Hard Cut]\n[track cuts dead at peak — zero release — instant total silence — no outro]`);
+  } else if (S.ending === 'fade') {
+    lines.push(`[Outro]\n[${dark ? 'dark descending fade, elements dropping away one by one' : 'euphoric fade, energy slowly dissolving'}]`);
+  } else if (S.ending === 'reverse-fade') {
+    lines.push(`[Outro]\n[reverse fade — silence first, then track fades back in then cuts]`);
+  } else {
+    lines.push(`[Outro]\n[${dark ? 'dark descending fade, dystopian silence' : 'euphoric wind-down, crowd energy released'}]`);
+  }
 
   return lines.join('\n\n');
 }
