@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMEN GEN — SUNO Prompt Generator</title>
+  <style>
+    :root {
+      --bg: #08080f;
+      --surface: #10101c;
+      --surface2: #18182a;
+      --border: #262640;
+      --primary: #ff2d78;
+      --secondary: #00d4ff;
+      --accent: #b44fff;
+      --text: #e0e0f0;
+      --dim: #606080;
+      --chip-bg: #1a1a2c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .container { max-width: 820px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 40px 0 28px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .logo {
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 900;
+      letter-spacing: 6px;
+      background: linear-gradient(90deg, #ff2d78, #b44fff, #00d4ff, #ff2d78);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: flow 4s linear infinite;
+    }
+    @keyframes flow {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    .sub {
+      color: var(--dim);
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    /* ── Section card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: var(--secondary);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    /* ── Flavor presets ── */
+    .presets {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .preset-btn {
+      flex-shrink: 0;
+      padding: 9px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .18s;
+    }
+    .preset-btn:hover { border-color: var(--primary); background: rgba(255,45,120,.1); }
+    .preset-btn.active {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(255,45,120,.25), rgba(180,79,255,.25));
+      color: #fff;
+    }
+
+    /* ── Two-col grid ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width:580px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Genre select ── */
+    select {
+      width: 100%;
+      padding: 10px 36px 10px 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath fill='%23606080' d='M5.5 7 0 0h11z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 13px center;
+    }
+    select:focus { outline: none; border-color: var(--secondary); }
+    select option { background: var(--surface2); }
+
+    /* ── BPM ── */
+    .bpm-number {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .bpm-number span { font-size: 0.75rem; color: var(--dim); margin-left: 3px; }
+    input[type=range] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 4px;
+      background: linear-gradient(
+        to right,
+        var(--primary) 0%,
+        var(--primary) var(--pct, 65%),
+        var(--border) var(--pct, 65%),
+        var(--border) 100%
+      );
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px rgba(255,45,120,.7);
+    }
+    .bpm-quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .bq {
+      padding: 4px 9px;
+      background: var(--chip-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all .14s;
+    }
+    .bq:hover { color: var(--secondary); border-color: var(--secondary); }
+
+    /* ── Chips ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 7px 14px;
+      background: var(--chip-bg);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all .14s;
+    }
+    .chip:hover { border-color: var(--primary); color: var(--text); }
+    .chip.on {
+      background: linear-gradient(135deg, rgba(255,45,120,.22), rgba(180,79,255,.22));
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    /* ── Output ── */
+    .out-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .out-tabs { display: flex; border-bottom: 1px solid var(--border); }
+    .out-tab {
+      padding: 11px 18px;
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .14s;
+    }
+    .out-tab.on { color: var(--secondary); border-bottom-color: var(--secondary); }
+    .out-body { padding: 18px 20px; }
+    .out-label { font-size: 0.65rem; letter-spacing: 2px; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; }
+    .prompt-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 14px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.83rem;
+      line-height: 1.75;
+      color: var(--text);
+      min-height: 70px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .tag {
+      padding: 3px 9px;
+      background: rgba(0,212,255,.08);
+      border: 1px solid rgba(0,212,255,.25);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--secondary);
+    }
+    .copy-btn {
+      margin-top: 13px;
+      padding: 10px 22px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: opacity .18s;
+    }
+    .copy-btn:hover { opacity: .85; }
+    .copy-btn:active { opacity: .65; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      padding: 11px 28px;
+      border-radius: 40px;
+      font-size: 0.82rem;
+      letter-spacing: 2px;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    footer {
+      text-align: center;
+      color: var(--dim);
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      padding: 28px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">⚡ AMEN GEN ⚡</div>
+    <div class="sub">SUNO用 アーメンブレイク プロンプト生成ツール</div>
+  </header>
+
+  <!-- Flavor Presets -->
+  <div class="card">
+    <div class="card-title">⚡ FLAVOR PRESET — ワンクリックで全設定を適用</div>
+    <div class="presets" id="presets">
+      <button class="preset-btn" data-p="jungle-fever">🌴 ジャングルフィーバー</button>
+      <button class="preset-btn" data-p="acid-explosion">⚗️ アシッド大爆発</button>
+      <button class="preset-btn" data-p="dub-max">🌊 ダブ感満点</button>
+      <button class="preset-btn" data-p="breakcore-chaos">💀 ブレイクコアカオス</button>
+      <button class="preset-btn" data-p="neuro-step">🤖 ニューロステップ</button>
+      <button class="preset-btn" data-p="euphoric-rave">✨ ユーフォリックレイヴ</button>
+      <button class="preset-btn" data-p="cyber-glitch">👾 サイバーグリッチ</button>
+      <button class="preset-btn" data-p="liquid-flow">💧 リキッドフロー</button>
+    </div>
+  </div>
+
+  <!-- Genre + BPM -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">🎵 GENRE</div>
+      <select id="genre">
+        <option value="jungle">Jungle</option>
+        <option value="dnb" selected>Drum &amp; Bass</option>
+        <option value="breakcore">Breakcore</option>
+        <option value="liquid">Liquid DnB</option>
+        <option value="halftime">Halftime DnB</option>
+        <option value="darkstep">Darkstep</option>
+        <option value="neurofunk">Neurofunk</option>
+        <option value="techstep">Techstep</option>
+        <option value="ragga">Ragga Jungle</option>
+        <option value="footwork">Footwork / Juke</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⏱ BPM</div>
+      <div class="bpm-number" id="bpm-disp">174<span>BPM</span></div>
+      <input type="range" id="bpm-range" min="80" max="220" value="174">
+      <div class="bpm-quick">
+        <button class="bq" data-bpm="140">140</button>
+        <button class="bq" data-bpm="160">160</button>
+        <button class="bq" data-bpm="165">165</button>
+        <button class="bq" data-bpm="170">170</button>
+        <button class="bq" data-bpm="174">174</button>
+        <button class="bq" data-bpm="180">180</button>
+        <button class="bq" data-bpm="200">200+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood -->
+  <div class="card">
+    <div class="card-title">🎭 MOOD &amp; ATMOSPHERE</div>
+    <div class="chips" id="mood">
+      <div class="chip" data-v="dark">Dark</div>
+      <div class="chip on" data-v="euphoric">Euphoric</div>
+      <div class="chip" data-v="chaotic">Chaotic</div>
+      <div class="chip" data-v="minimal">Minimal</div>
+      <div class="chip on" data-v="aggressive">Aggressive</div>
+      <div class="chip" data-v="hypnotic">Hypnotic</div>
+      <div class="chip" data-v="industrial">Industrial</div>
+      <div class="chip" data-v="atmospheric">Atmospheric</div>
+      <div class="chip" data-v="energetic">Energetic</div>
+      <div class="chip" data-v="melancholic">Melancholic</div>
+      <div class="chip" data-v="trippy">Trippy</div>
+      <div class="chip" data-v="tense">Tense</div>
+      <div class="chip" data-v="dystopian">Dystopian</div>
+      <div class="chip" data-v="dreamy">Dreamy</div>
+    </div>
+  </div>
+
+  <!-- Elements -->
+  <div class="card">
+    <div class="card-title">🔧 ELEMENTS &amp; INSTRUMENTS</div>
+    <div class="chips" id="elements">
+      <div class="chip on" data-v="amen break drums">Amen Break</div>
+      <div class="chip on" data-v="chopped breaks">Chopped Breaks</div>
+      <div class="chip" data-v="reese bass">Reese Bass</div>
+      <div class="chip" data-v="sub bass">Sub Bass</div>
+      <div class="chip" data-v="acid 303 bassline">Acid 303</div>
+      <div class="chip" data-v="vocal chops">Vocal Chops</div>
+      <div class="chip" data-v="orchestral stabs">Orchestral Stabs</div>
+      <div class="chip" data-v="atmospheric pads">Atmospheric Pads</div>
+      <div class="chip" data-v="heavy sub bass">Heavy Subs</div>
+      <div class="chip" data-v="pitched drums">Pitched Drums</div>
+      <div class="chip" data-v="timestretched samples">Timestretching</div>
+      <div class="chip" data-v="distorted snare">Distorted Snare</div>
+      <div class="chip" data-v="filtered hi-hats">Filtered Hi-hats</div>
+      <div class="chip" data-v="rhodes piano">Rhodes Piano</div>
+      <div class="chip" data-v="horn stabs">Horn Stabs</div>
+      <div class="chip" data-v="synth lead">Synth Lead</div>
+      <div class="chip" data-v="hoover synth">Hoover Synth</div>
+      <div class="chip" data-v="breakbeat percussion">Breakbeat Perc</div>
+    </div>
+  </div>
+
+  <!-- Special Flavor -->
+  <div class="card">
+    <div class="card-title">🌀 SPECIAL FLAVOR — 追加フレーバー（複数OK）</div>
+    <div class="chips" id="flavor">
+      <div class="chip" data-v="heavy reverb, dub echo, spacious sound design">ダブ感満点</div>
+      <div class="chip" data-v="screaming acid TB-303, squelching resonant filter sweeps">アシッド大爆発</div>
+      <div class="chip" data-v="glitch artifacts, digital noise, stuttering">グリッチノイズ</div>
+      <div class="chip" data-v="lush reverb tails, cavernous spaces, infinite decay">洞窟リバーブ</div>
+      <div class="chip" data-v="heavy flanger, phaser sweeps, intense modulation fx">フランジャー狂</div>
+      <div class="chip" data-v="extreme distortion, saturation overdrive, grit and grime">歪み轟音</div>
+      <div class="chip" data-v="granular textures, time-stretched clouds, micro-editing">グラニュラー感</div>
+      <div class="chip" data-v="classic rave stabs, hoovers, vintage 90s rave energy">レイヴクラシック</div>
+      <div class="chip" data-v="reggae influence, heavy one-drop bass, skank rhythm">レゲエ要素</div>
+      <div class="chip" data-v="cinematic tension, dramatic orchestral swells, epic scale">シネマティック</div>
+      <div class="chip" data-v="lo-fi tape degradation, vinyl crackle, warm saturation">ローファイ感</div>
+      <div class="chip" data-v="extreme pitch shifting, chipmunk effects, pitched-up breaks">ピッチ狂い</div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="card">
+    <div class="card-title">📋 OUTPUT</div>
+    <div class="out-label">① LYRICS / STRUCTURE — SUNOの歌詞欄にペースト:</div>
+    <div class="prompt-box" id="lyrics-out"></div>
+    <button class="copy-btn" onclick="copyLyrics()">▶ COPY LYRICS</button>
+
+    <div style="height:18px"></div>
+
+    <div class="out-label">② STYLE — SUNOの「Style of Music」欄にペースト:</div>
+    <div class="prompt-box" id="style-out"></div>
+    <div class="tag-row" id="tag-row"></div>
+    <button class="copy-btn" onclick="copyStyle()">▶ COPY STYLE</button>
+  </div>
+
+  <footer>AMEN GEN v1.0 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
+</div>
+
+<div class="toast" id="toast">COPIED ✓</div>
+
+<script>
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const GENRES = {
+  jungle:    { tags: ['jungle', 'amen break', 'ragga jungle', 'chopped jungle drums'], vibe: 'hyper-chopped jungle breaks with pitched basslines' },
+  dnb:       { tags: ['drum and bass', 'amen break drums', 'rolling DnB bassline'], vibe: 'classic two-step breakbeat with deep bass' },
+  breakcore: { tags: ['breakcore', 'drill n bass', 'ultra-chopped amen break', 'glitch percussion'], vibe: 'hyper-fragmented chaotic amen loops' },
+  liquid:    { tags: ['liquid drum and bass', 'smooth breakbeat', 'soulful DnB', 'lush pads'], vibe: 'flowing smooth breaks with melodic pads' },
+  halftime:  { tags: ['halftime DnB', 'half-time breakbeat', 'cinematic sub bass', 'dubstep influence'], vibe: 'slow heavy drops with massive sub bass' },
+  darkstep:  { tags: ['darkstep', 'dark drum and bass', 'menacing breaks', 'dystopian DnB'], vibe: 'menacing dark atmosphere with powerful compressed drums' },
+  neurofunk: { tags: ['neurofunk', 'technical DnB', 'robotic bass wobble', 'complex drum programming'], vibe: 'technical complex programming with morphing neurofunk bass' },
+  techstep:  { tags: ['techstep', 'techno-influenced DnB', 'industrial precision beats', 'mechanical rhythm'], vibe: 'mechanical grid-locked techno-influenced breakbeats' },
+  ragga:     { tags: ['ragga jungle', 'dancehall breakbeat', 'reggae jungle', 'MC vocals'], vibe: 'reggae influenced chopped jungle with patois toasting' },
+  footwork:  { tags: ['footwork', 'juke', 'chicago footwork', 'rapid hi-hat polyrhythm'], vibe: 'rapid 160 BPM footwork patterns with chopped samples' },
+};
+
+const PRESETS = {
+  'jungle-fever': {
+    genre:'jungle', bpm:170,
+    mood:['chaotic','aggressive','energetic'],
+    elements:['amen break drums','chopped breaks','vocal chops','horn stabs'],
+    flavor:[]
+  },
+  'acid-explosion': {
+    genre:'jungle', bpm:165,
+    mood:['chaotic','aggressive','trippy'],
+    elements:['amen break drums','chopped breaks','acid 303 bassline','vocal chops'],
+    flavor:['screaming acid TB-303, squelching resonant filter sweeps']
+  },
+  'dub-max': {
+    genre:'dnb', bpm:140,
+    mood:['hypnotic','atmospheric','melancholic'],
+    elements:['amen break drums','sub bass','atmospheric pads','reese bass'],
+    flavor:['heavy reverb, dub echo, spacious sound design','reggae influence, heavy one-drop bass, skank rhythm']
+  },
+  'breakcore-chaos': {
+    genre:'breakcore', bpm:195,
+    mood:['chaotic','aggressive','industrial'],
+    elements:['amen break drums','chopped breaks','distorted snare','heavy sub bass'],
+    flavor:['glitch artifacts, digital noise, stuttering','extreme distortion, saturation overdrive, grit and grime']
+  },
+  'neuro-step': {
+    genre:'neurofunk', bpm:174,
+    mood:['dark','industrial','tense'],
+    elements:['amen break drums','reese bass','sub bass','filtered hi-hats'],
+    flavor:['granular textures, time-stretched clouds, micro-editing']
+  },
+  'euphoric-rave': {
+    genre:'dnb', bpm:174,
+    mood:['euphoric','energetic','atmospheric'],
+    elements:['amen break drums','chopped breaks','orchestral stabs','atmospheric pads','hoover synth'],
+    flavor:['classic rave stabs, hoovers, vintage 90s rave energy']
+  },
+  'cyber-glitch': {
+    genre:'breakcore', bpm:188,
+    mood:['chaotic','industrial','tense'],
+    elements:['amen break drums','chopped breaks','distorted snare','synth lead'],
+    flavor:['glitch artifacts, digital noise, stuttering','heavy flanger, phaser sweeps, intense modulation fx']
+  },
+  'liquid-flow': {
+    genre:'liquid', bpm:174,
+    mood:['atmospheric','melancholic','dreamy'],
+    elements:['amen break drums','chopped breaks','atmospheric pads','rhodes piano'],
+    flavor:['lush reverb tails, cavernous spaces, infinite decay']
+  }
+};
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+const S = {
+  genre: 'dnb',
+  bpm: 174,
+  mood: ['euphoric','aggressive'],
+  elements: ['amen break drums','chopped breaks'],
+  flavor: [],
+};
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  // Genre
+  document.getElementById('genre').addEventListener('change', e => {
+    S.genre = e.target.value;
+    clearPresets();
+    gen();
+  });
+
+  // BPM range
+  const rng = document.getElementById('bpm-range');
+  rng.addEventListener('input', () => {
+    S.bpm = +rng.value;
+    document.getElementById('bpm-disp').innerHTML = `${S.bpm}<span>BPM</span>`;
+    refreshSlider();
+    clearPresets();
+    gen();
+  });
+
+  // BPM quick
+  document.querySelectorAll('.bq').forEach(b => b.addEventListener('click', () => {
+    S.bpm = +b.dataset.bpm;
+    rng.value = S.bpm;
+    document.getElementById('bpm-disp').innerHTML = `${S.bpm}<span>BPM</span>`;
+    refreshSlider();
+    clearPresets();
+    gen();
+  }));
+
+  // Mood chips
+  bindChips('mood', S.mood);
+  bindChips('elements', S.elements);
+  bindChips('flavor', S.flavor);
+
+  // Flavor presets
+  document.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => {
+    applyPreset(b.dataset.p, b);
+  }));
+
+  refreshSlider();
+  gen();
+}
+
+function bindChips(id, arr) {
+  document.querySelectorAll(`#${id} .chip`).forEach(c => c.addEventListener('click', () => {
+    const v = c.dataset.v;
+    c.classList.toggle('on');
+    if (c.classList.contains('on')) { if (!arr.includes(v)) arr.push(v); }
+    else { const i = arr.indexOf(v); if (i >= 0) arr.splice(i,1); }
+    clearPresets();
+    gen();
+  }));
+}
+
+function refreshSlider() {
+  const r = document.getElementById('bpm-range');
+  const pct = ((S.bpm - +r.min) / (+r.max - +r.min) * 100).toFixed(1) + '%';
+  r.style.setProperty('--pct', pct);
+}
+
+function clearPresets() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+}
+
+function applyPreset(key, btn) {
+  const p = PRESETS[key];
+  if (!p) return;
+
+  S.genre = p.genre;
+  S.bpm   = p.bpm;
+  S.mood.length = 0;    S.mood.push(...p.mood);
+  S.elements.length = 0; S.elements.push(...p.elements);
+  S.flavor.length = 0;  S.flavor.push(...p.flavor);
+
+  document.getElementById('genre').value = p.genre;
+  document.getElementById('bpm-range').value = p.bpm;
+  document.getElementById('bpm-disp').innerHTML = `${p.bpm}<span>BPM</span>`;
+  refreshSlider();
+
+  syncChips('mood',     p.mood);
+  syncChips('elements', p.elements);
+  syncChips('flavor',   p.flavor);
+
+  clearPresets();
+  btn.classList.add('active');
+  gen();
+}
+
+function syncChips(id, arr) {
+  document.querySelectorAll(`#${id} .chip`).forEach(c => {
+    c.classList.toggle('on', arr.includes(c.dataset.v));
+  });
+}
+
+// ══════════════════════════════════════════
+//  GENERATE
+// ══════════════════════════════════════════
+function buildTags() {
+  const g = GENRES[S.genre];
+  const tags = [...g.tags, `${S.bpm} BPM`];
+
+  S.mood.forEach(m => tags.push(m));
+  S.elements.forEach(e => tags.push(e));
+  S.flavor.forEach(f => f.split(',').map(s => s.trim()).forEach(t => tags.push(t)));
+
+  // Deduplicate keeping order
+  return [...new Map(tags.map(t => [t.toLowerCase(), t])).values()];
+}
+
+function buildStructure() {
+  const g      = GENRES[S.genre];
+  const dark   = S.mood.some(m => ['dark','industrial','dystopian','tense'].includes(m));
+  const chaos  = S.mood.includes('chaotic') || S.genre === 'breakcore';
+  const melody = S.elements.some(e => ['atmospheric pads','rhodes piano','synth lead','orchestral stabs','hoover synth'].includes(e));
+
+  const lines = [];
+  lines.push(`[Intro]\n[${g.vibe}, filter slowly opening]`);
+
+  if (melody) lines.push(`[Build]\n[melody enters, tension rising, ${S.bpm} BPM locked groove]`);
+
+  lines.push(`[Drop]\n[full amen break drops, ${S.mood.slice(0,2).join(' & ')} energy, bass hits hard]`);
+
+  if (chaos) {
+    lines.push(`[Glitch Break]\n[amen break fragments into chaos, stuttering glitches, noise erupts]`);
+    lines.push(`[Drop 2]\n[maximum intensity — every element collides, unstoppable momentum]`);
+  } else {
+    lines.push(`[Break]\n[stripped back, atmospheric tension, stripped drums, pads breathe]`);
+    lines.push(`[Drop 2]\n[bigger than before, full arrangement, crowd moment]`);
+  }
+
+  lines.push(`[Outro]\n[${dark ? 'dark descending fade, dystopian silence' : 'euphoric wind-down, crowd energy released'}]`);
+
+  return lines.join('\n\n');
+}
+
+function gen() {
+  const tags   = buildTags();
+  const style  = tags.join(', ');
+  const struct = buildStructure();
+
+  document.getElementById('lyrics-out').textContent = struct;
+  document.getElementById('style-out').textContent  = style;
+  document.getElementById('tag-row').innerHTML       = tags.map(t => `<span class="tag">${t}</span>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  COPY
+// ══════════════════════════════════════════
+function toast() {
+  const el = document.getElementById('toast');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+function copyLyrics() { navigator.clipboard.writeText(document.getElementById('lyrics-out').textContent); toast(); }
+function copyStyle()  { navigator.clipboard.writeText(document.getElementById('style-out').textContent);  toast(); }
+
+init();
+</script>
+</body>
+</html>
