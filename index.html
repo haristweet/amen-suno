@@ -6,29 +6,29 @@
   <title>AMEN GEN — SUNO Prompt Generator</title>
   <style>
     :root {
-      --bg: #08080f;
-      --surface: #10101c;
-      --surface2: #18182a;
-      --border: #262640;
-      --primary: #ff2d78;
-      --secondary: #00d4ff;
-      --accent: #b44fff;
-      --text: #e0e0f0;
-      --dim: #606080;
-      --chip-bg: #1a1a2c;
+      --bg: #13131a;
+      --surface: #1c1c26;
+      --surface2: #24242f;
+      --border: #33333f;
+      --primary: #d9607a;
+      --secondary: #5aabb8;
+      --accent: #9b72cc;
+      --text: #ccccd8;
+      --dim: #6a6a80;
+      --chip-bg: #20202c;
     }
     @media (prefers-color-scheme: light) {
       :root {
-        --bg: #f2f2f8;
+        --bg: #f4f3ef;
         --surface: #ffffff;
-        --surface2: #eaeaf4;
-        --border: #cccce0;
-        --primary: #d4005e;
-        --secondary: #007aaa;
-        --accent: #8822cc;
-        --text: #18182a;
-        --dim: #7070a0;
-        --chip-bg: #e8e8f4;
+        --surface2: #eeede8;
+        --border: #d4d3cc;
+        --primary: #b84060;
+        --secondary: #3a7e8f;
+        --accent: #7248a8;
+        --text: #2a2a36;
+        --dim: #848494;
+        --chip-bg: #e8e7e2;
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,7 +54,7 @@
       font-size: clamp(2rem, 8vw, 3rem);
       font-weight: 900;
       letter-spacing: 6px;
-      background: linear-gradient(90deg, #ff2d78, #b44fff, #00d4ff, #ff2d78);
+      background: linear-gradient(90deg, #d9607a, #9b72cc, #5aabb8, #d9607a);
       background-size: 300% 100%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -169,7 +169,7 @@
       width: 18px; height: 18px;
       border-radius: 50%;
       background: var(--primary);
-      box-shadow: 0 0 10px rgba(255,45,120,.7);
+      box-shadow: 0 0 8px rgba(217,96,122,.4);
     }
     .bpm-quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .bq {
@@ -297,7 +297,7 @@
     .suno-btn {
       width: 100%;
       padding: 16px;
-      background: linear-gradient(135deg, #ff2d78, #b44fff, #00d4ff);
+      background: linear-gradient(135deg, #d9607a, #9b72cc, #5aabb8);
       background-size: 200% 100%;
       border: none;
       border-radius: 12px;
