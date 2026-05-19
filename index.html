@@ -238,6 +238,8 @@
     .out-body { padding: 18px 20px; }
     .out-label { font-size: 0.65rem; letter-spacing: 2px; color: var(--dim); margin-bottom: 8px; text-transform: uppercase; }
     .prompt-box {
+      display: block;
+      width: 100%;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 9px;
@@ -249,7 +251,11 @@
       min-height: 70px;
       white-space: pre-wrap;
       word-break: break-all;
+      resize: none;
+      outline: none;
+      cursor: text;
     }
+    .prompt-box:focus { border-color: var(--secondary); }
     .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .tag {
       padding: 3px 9px;
@@ -518,7 +524,7 @@
   <div class="card">
     <div class="card-title">📋 OUTPUT</div>
     <div class="out-label">① LYRICS / STRUCTURE — SUNOの歌詞欄にペースト:</div>
-    <div class="prompt-box" id="lyrics-out"></div>
+    <textarea class="prompt-box" id="lyrics-out" readonly rows="10" onclick="this.select()"></textarea>
     <div class="btn-row">
       <button class="copy-btn" onclick="copyLyrics()">▶ COPY LYRICS</button>
       <button class="rand-btn" onclick="randomizeLyrics()">🎲 RANDOM LYRICS</button>
@@ -528,7 +534,7 @@
     <div style="height:18px"></div>
 
     <div class="out-label">② STYLE — SUNOの「Style of Music」欄にペースト:</div>
-    <div class="prompt-box" id="style-out"></div>
+    <textarea class="prompt-box" id="style-out" readonly rows="4" onclick="this.select()"></textarea>
     <div class="tag-row" id="tag-row"></div>
     <button class="copy-btn" onclick="copyStyle()">▶ COPY STYLE</button>
 
@@ -1970,7 +1976,7 @@ function pickLyricTemplate() {
 
 function randomizeLyrics() {
   S.customLyrics = pickLyricTemplate();
-  document.getElementById('lyrics-out').textContent = S.customLyrics;
+  document.getElementById('lyrics-out').value = S.customLyrics;
   document.getElementById('reset-lyrics-btn').style.display = 'inline-block';
 }
 
@@ -2159,9 +2165,9 @@ function gen() {
   const style  = tags.join(', ');
 
   if (!S.customLyrics) {
-    document.getElementById('lyrics-out').textContent = buildStructure();
+    document.getElementById('lyrics-out').value = buildStructure();
   }
-  document.getElementById('style-out').textContent  = style;
+  document.getElementById('style-out').value  = style;
   document.getElementById('tag-row').innerHTML       = tags.map(t => `<span class="tag">${t}</span>`).join('');
 }
 
@@ -2176,43 +2182,46 @@ function toastMsg(msg) {
   setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-async function copyToClipboard(text) {
+function copyEl(id) {
+  const el = document.getElementById(id);
+  el.select();
+  el.setSelectionRange(0, 99999); // iOS対応
+  let ok = false;
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // フォールバック: execCommand
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
+    ok = document.execCommand('copy');
+  } catch (_) {}
+  if (!ok) {
+    // execCommand非対応ブラウザ向けフォールバック
+    navigator.clipboard.writeText(el.value).catch(() => {});
+    ok = true;
   }
+  window.getSelection()?.removeAllRanges();
+  return ok;
 }
 
-async function copyLyrics() {
-  await copyToClipboard(document.getElementById('lyrics-out').textContent);
-  toast();
-}
-async function copyStyle() {
-  await copyToClipboard(document.getElementById('style-out').textContent);
-  toast();
-}
+function copyLyrics() { copyEl('lyrics-out'); toast(); }
+function copyStyle()  { copyEl('style-out');  toast(); }
 
-async function openSuno() {
-  const lyrics = document.getElementById('lyrics-out').textContent;
-  const style  = document.getElementById('style-out').textContent;
-  const text   = lyrics + '\n\nStyle: ' + style;
+function openSuno() {
+  const lyrics = document.getElementById('lyrics-out').value;
+  const style  = document.getElementById('style-out').value;
 
-  // window.open はクリックハンドラの同期フェーズで呼ぶ必要がある
+  // テンポラリtextareaで結合テキストをコピー（最も確実な方法）
+  const ta = document.createElement('textarea');
+  ta.value = lyrics + '\n\nStyle: ' + style;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0.01;font-size:16px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, 99999);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (_) {}
+  document.body.removeChild(ta);
+
   const w = window.open('https://suno.com/create', '_blank');
-  const ok = await copyToClipboard(text);
 
   if (!ok) {
-    toastMsg('コピー失敗 — 手動でコピーしてください');
+    toastMsg('コピー失敗 — テキストを手動でコピーしてください');
   } else if (!w) {
     toastMsg('COPIED ✓ — ポップアップを許可してSUNOを開いてください');
   } else {
