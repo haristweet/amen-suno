@@ -320,6 +320,19 @@
       margin-top: 8px;
     }
 
+    .version-badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      color: var(--dim);
+    }
+    .version-badge span { color: var(--accent); }
+
     footer {
       text-align: center;
       color: var(--dim);
@@ -335,6 +348,7 @@
   <header>
     <div class="logo">⚡ AMEN GEN ⚡</div>
     <div class="sub">SUNO用 アーメンブレイク プロンプト生成ツール</div>
+    <div class="version-badge" id="version-badge">v<span id="ver-num">…</span></div>
   </header>
 
   <!-- Flavor Presets -->
@@ -492,12 +506,17 @@
     <div class="suno-hint">タップするとLYRICS＋STYLEをコピーしてSUNOを開きます</div>
   </div>
 
-  <footer>AMEN GEN v1.1.0 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
+  <footer id="footer-ver">AMEN GEN v1.1.0 &nbsp;//&nbsp; FOR SUNO AI MUSIC</footer>
 </div>
 
 <div class="toast" id="toast">COPIED ✓</div>
 
 <script>
+// ══════════════════════════════════════════
+//  VERSION
+// ══════════════════════════════════════════
+const VERSION = '1.1.0';
+
 // ══════════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════════
@@ -650,6 +669,11 @@ function init() {
   document.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => {
     applyPreset(b.dataset.p, b);
   }));
+
+  // バージョン表示を両箇所に反映
+  document.getElementById('ver-num').textContent = VERSION;
+  document.getElementById('footer-ver').innerHTML =
+    `AMEN GEN v${VERSION} &nbsp;//&nbsp; FOR SUNO AI MUSIC`;
 
   refreshSlider();
   gen();
