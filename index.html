@@ -814,14 +814,50 @@ function toastMsg(msg) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
 }
-function copyLyrics() { navigator.clipboard.writeText(document.getElementById('lyrics-out').textContent); toast(); }
-function copyStyle()  { navigator.clipboard.writeText(document.getElementById('style-out').textContent);  toast(); }
-function openSuno() {
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // フォールバック: execCommand
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
+
+async function copyLyrics() {
+  await copyToClipboard(document.getElementById('lyrics-out').textContent);
+  toast();
+}
+async function copyStyle() {
+  await copyToClipboard(document.getElementById('style-out').textContent);
+  toast();
+}
+
+async function openSuno() {
   const lyrics = document.getElementById('lyrics-out').textContent;
   const style  = document.getElementById('style-out').textContent;
-  navigator.clipboard.writeText(lyrics + '\n\nStyle: ' + style);
-  window.open('https://suno.com/create', '_blank');
-  toastMsg('COPIED! SUNOにペーストしてね');
+  const text   = lyrics + '\n\nStyle: ' + style;
+
+  // window.open はクリックハンドラの同期フェーズで呼ぶ必要がある
+  const w = window.open('https://suno.com/create', '_blank');
+  const ok = await copyToClipboard(text);
+
+  if (!ok) {
+    toastMsg('コピー失敗 — 手動でコピーしてください');
+  } else if (!w) {
+    toastMsg('COPIED ✓ — ポップアップを許可してSUNOを開いてください');
+  } else {
+    toastMsg('COPIED! SUNOにペーストしてね');
+  }
+}
 }
 
 init();
