@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL BATTLER</title>
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --surface: #141420;
+      --surface2: #1c1c2c;
+      --border: #2a2a40;
+      --primary: #00d4ff;
+      --secondary: #ff3366;
+      --accent: #9b72cc;
+      --text: #ccccd8;
+      --dim: #5a5a7a;
+      --win: #00ff88;
+      --lose: #ff3344;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .logo {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 8px;
+      background: linear-gradient(90deg, #00d4ff, #9b72cc, #ff3366, #00d4ff);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: flow 4s linear infinite;
+    }
+    @keyframes flow { 0% { background-position: 0%; } 100% { background-position: 300%; } }
+    .sub { color: var(--dim); font-size: 0.7rem; letter-spacing: 3px; margin-top: 8px; text-transform: uppercase; }
+
+    .phase { display: none; }
+    .phase.active { display: block; }
+
+    /* ── Setup ── */
+    .setup-desc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 0.8rem;
+      color: var(--dim);
+      line-height: 1.9;
+    }
+    .formula-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .ftag {
+      padding: 3px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.68rem;
+      color: var(--primary);
+    }
+
+    .url-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .url-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .url-row:focus-within { border-color: var(--primary); }
+    .slot-n { color: var(--dim); font-size: 0.75rem; min-width: 18px; }
+    .url-in {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+    }
+    .url-in::placeholder { color: var(--dim); }
+    .pwr-badge { font-size: 0.8rem; font-weight: bold; color: var(--primary); min-width: 64px; text-align: right; white-space: nowrap; }
+    .pwr-badge.zero { color: var(--dim); }
+
+    .start-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: opacity .2s, transform .2s;
+    }
+    .start-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .start-btn:not(:disabled):hover { opacity: 0.85; transform: scale(1.01); }
+
+    /* ── Battle ── */
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin-bottom: 20px;
+    }
+    .score-side { text-align: center; }
+    .score-lbl { font-size: 0.65rem; letter-spacing: 2px; color: var(--dim); margin-bottom: 4px; }
+    .score-n { font-size: 2.5rem; font-weight: 900; }
+    .score-n.p { color: var(--primary); }
+    .score-n.c { color: var(--secondary); }
+    .round-info { text-align: center; }
+    .round-lbl { font-size: 0.65rem; letter-spacing: 2px; color: var(--dim); }
+    .round-n { font-size: 1.2rem; font-weight: 900; color: var(--accent); }
+
+    .arena {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .arena-slot {
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      transition: border-color .2s, background .3s;
+    }
+    .arena-slot.ps { border-color: var(--primary); }
+    .arena-slot.cs { border-color: var(--secondary); }
+    .arena-slot.win { background: rgba(0,255,136,.1); border-color: var(--win); }
+    .arena-slot.lose { background: rgba(255,51,68,.08); border-color: var(--lose); }
+    .arena-slot.draw { background: rgba(155,114,204,.1); border-color: var(--accent); }
+    .arena-url { font-size: 0.62rem; color: var(--dim); word-break: break-all; margin-bottom: 8px; max-height: 48px; overflow: hidden; line-height: 1.4; }
+    .arena-pwr { font-size: 2rem; font-weight: 900; }
+    .arena-pwr.p { color: var(--primary); }
+    .arena-pwr.c { color: var(--secondary); }
+    .arena-pwr.w { color: var(--win); }
+    .arena-ph { color: var(--dim); font-size: 0.7rem; letter-spacing: 2px; }
+    .vs-txt { font-size: 1.5rem; font-weight: 900; color: var(--dim); }
+
+    .round-result {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+      min-height: 30px;
+    }
+    .round-result.win { color: var(--win); }
+    .round-result.lose { color: var(--lose); }
+    .round-result.draw { color: var(--accent); }
+
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: opacity .2s;
+    }
+    .action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .action-btn:not(:disabled):hover { opacity: 0.85; }
+
+    .hand-lbl { font-size: 0.65rem; letter-spacing: 3px; color: var(--dim); margin-bottom: 10px; text-transform: uppercase; }
+    .hand { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .card {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .card:hover { border-color: var(--primary); background: var(--surface2); }
+    .card.selected { border-color: var(--primary); background: rgba(0,212,255,.1); box-shadow: 0 0 12px rgba(0,212,255,.2); }
+    .card-url { font-size: 0.6rem; color: var(--dim); word-break: break-all; margin-bottom: 6px; line-height: 1.4; max-height: 38px; overflow: hidden; }
+    .card-pwr { font-size: 1.4rem; font-weight: 900; color: var(--primary); }
+    .card-pwr-lbl { font-size: 0.55rem; color: var(--dim); letter-spacing: 1px; }
+
+    /* ── Result ── */
+    .result-box {
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px 24px;
+      margin-bottom: 20px;
+    }
+    .result-title { font-size: 2.5rem; font-weight: 900; letter-spacing: 6px; margin-bottom: 8px; }
+    .result-title.win { color: var(--win); }
+    .result-title.lose { color: var(--lose); }
+    .result-title.draw { color: var(--accent); }
+    .result-score { font-size: 1.1rem; color: var(--dim); letter-spacing: 2px; }
+
+    .history { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+    .history-title { padding: 12px 16px; font-size: 0.65rem; letter-spacing: 3px; color: var(--dim); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+    .hrow {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      font-size: 0.7rem;
+    }
+    .hrow:last-child { border-bottom: none; }
+    .hrow.wr { background: rgba(0,255,136,.04); }
+    .hrow.lr { background: rgba(255,51,68,.04); }
+    .h-url { word-break: break-all; color: var(--dim); line-height: 1.4; }
+    .h-url.w { color: var(--text); }
+    .h-pwr { font-weight: bold; font-size: 0.9rem; }
+    .h-pwr.p { color: var(--primary); }
+    .h-pwr.c { color: var(--secondary); }
+    .h-mid { text-align: center; }
+    .hbadge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .hbadge.win { background: rgba(0,255,136,.2); color: var(--win); }
+    .hbadge.lose { background: rgba(255,51,68,.2); color: var(--lose); }
+    .hbadge.draw { background: rgba(155,114,204,.2); color: var(--accent); }
+    .h-rnd { font-size: 0.6rem; color: var(--dim); margin-bottom: 4px; }
+
+    .replay-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .replay-btn:hover { opacity: 0.85; }
+
+    footer { text-align: center; color: var(--dim); font-size: 0.6rem; letter-spacing: 3px; padding: 24px 0; }
+
+    @keyframes pop { 0% { transform: scale(.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .pop { animation: pop .25s ease-out; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">URL BATTLER</div>
+    <div class="sub">URLの強さで戦う 5本勝負</div>
+  </header>
+
+  <!-- SETUP -->
+  <div class="phase active" id="phase-setup">
+    <div class="setup-desc">
+      URLを5つ入力してデッキを組め。各URLの <strong style="color:var(--primary)">POWER</strong> は以下で決まる：
+      <div class="formula-row">
+        <span class="ftag">文字数 ÷ 3 (最大50)</span>
+        <span class="ftag">HTTPS +20</span>
+        <span class="ftag">.gov +50 / .edu +40 / .org +30 / .com +20 / .net +15 / .io +12 / .jp +10</span>
+        <span class="ftag">パスの深さ × 5 (最大30)</span>
+        <span class="ftag">クエリパラメータ数 × 5 (最大20)</span>
+        <span class="ftag">サブドメイン (www除く) +15</span>
+        <span class="ftag">フラグメント(#) +5</span>
+      </div>
+    </div>
+    <div class="url-inputs" id="url-inputs"></div>
+    <button class="start-btn" id="start-btn" disabled onclick="startBattle()">▶ BATTLE START</button>
+  </div>
+
+  <!-- BATTLE -->
+  <div class="phase" id="phase-battle">
+    <div class="scoreboard">
+      <div class="score-side">
+        <div class="score-lbl">PLAYER</div>
+        <div class="score-n p" id="score-p">0</div>
+      </div>
+      <div class="round-info">
+        <div class="round-lbl">ROUND</div>
+        <div class="round-n" id="round-n">1 / 5</div>
+      </div>
+      <div class="score-side">
+        <div class="score-lbl">CPU</div>
+        <div class="score-n c" id="score-c">0</div>
+      </div>
+    </div>
+
+    <div class="arena">
+      <div class="arena-slot ps" id="arena-p"><div class="arena-ph">カードを選択</div></div>
+      <div class="vs-txt">VS</div>
+      <div class="arena-slot cs" id="arena-c"><div class="arena-ph">???</div></div>
+    </div>
+
+    <div class="round-result" id="round-result"></div>
+    <button class="action-btn" id="action-btn" disabled onclick="doBattle()">⚔ BATTLE</button>
+
+    <div class="hand-lbl">YOUR HAND — カードを1枚選べ</div>
+    <div class="hand" id="hand"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="phase" id="phase-result">
+    <div class="result-box">
+      <div class="result-title" id="result-title">DRAW</div>
+      <div class="result-score" id="result-score">0 — 0</div>
+    </div>
+    <div class="history">
+      <div class="history-title">BATTLE LOG</div>
+      <div id="history-rows"></div>
+    </div>
+    <button class="replay-btn" onclick="resetGame()">↺ PLAY AGAIN</button>
+  </div>
+
+  <footer>URL BATTLER v1.0.0</footer>
+</div>
+
+<script>
+// ──────────────────────────────────────────
+//  CPU URL プール
+// ──────────────────────────────────────────
+const CPU_POOL = [
+  'https://www.google.com',
+  'https://github.com/torvalds/linux',
+  'https://en.wikipedia.org/wiki/Artificial_intelligence',
+  'https://mail.google.com/mail/u/0/#inbox',
+  'https://docs.python.org/3/library/functions.html',
+  'https://api.github.com/repos/torvalds/linux/commits?sha=master&per_page=100',
+  'http://x.io',
+  'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLbpi6ZahtOH6Ar_3GPy3yGAPTE5S2JHPr',
+  'https://stackoverflow.com/questions/11875770/how-do-i-overcome-datetime-datetime-not-json-serializable',
+  'https://subdomain.example.gov/path/to/deep/resource?param1=value1&param2=value2&param3=value3#section',
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap',
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+  'https://news.ycombinator.com/item?id=38123456',
+  'https://archive.org/details/internetarchive',
+  'https://www.reddit.com/r/programming/comments/abc123/interesting_discussion/',
+];
+
+// ──────────────────────────────────────────
+//  POWER 計算
+// ──────────────────────────────────────────
+const TLD_SCORE = { mil: 60, gov: 50, edu: 40, org: 30, com: 20, net: 15, io: 12, jp: 10, uk: 8, de: 8, fr: 8 };
+
+function calcPower(raw) {
+  const url = raw.trim();
+  if (!url) return 0;
+
+  let power = 0;
+
+  // 文字数
+  power += Math.min(Math.floor(url.length / 3), 50);
+
+  // HTTPS
+  if (url.startsWith('https://')) power += 20;
+
+  try {
+    const u = new URL(url.startsWith('http') ? url : 'https://' + url);
+    const parts = u.hostname.split('.');
+
+    // TLD
+    const tld = parts[parts.length - 1].toLowerCase();
+    power += TLD_SCORE[tld] ?? 5;
+
+    // パスの深さ
+    const depth = (u.pathname.match(/\//g) || []).length;
+    power += Math.min(depth * 5, 30);
+
+    // クエリパラメータ
+    power += Math.min([...u.searchParams].length * 5, 20);
+
+    // サブドメイン (www 除く)
+    if (parts.length > 2 && parts[0] !== 'www') power += 15;
+
+    // フラグメント
+    if (u.hash) power += 5;
+  } catch (_) {}
+
+  return Math.round(power);
+}
+
+// ──────────────────────────────────────────
+//  ゲーム状態
+// ──────────────────────────────────────────
+const G = {
+  playerHand: [],
+  cpuHand: [],
+  selected: null,
+  round: 0,
+  scores: { p: 0, c: 0 },
+  history: [],
+  revealed: false,
+};
+
+// ──────────────────────────────────────────
+//  SETUP フェーズ
+// ──────────────────────────────────────────
+function initInputs() {
+  const wrap = document.getElementById('url-inputs');
+  wrap.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const row = document.createElement('div');
+    row.className = 'url-row';
+    row.innerHTML = `
+      <span class="slot-n">${i + 1}</span>
+      <input class="url-in" type="text" placeholder="https://..." autocomplete="off" spellcheck="false">
+      <span class="pwr-badge zero" id="badge-${i}">PWR —</span>`;
+    wrap.appendChild(row);
+    row.querySelector('input').addEventListener('input', e => {
+      const p = calcPower(e.target.value);
+      const b = document.getElementById(`badge-${i}`);
+      b.textContent = p > 0 ? `PWR ${p}` : 'PWR —';
+      b.className = p > 0 ? 'pwr-badge' : 'pwr-badge zero';
+      checkReady();
+    });
+  }
+}
+
+function checkReady() {
+  const all = [...document.querySelectorAll('.url-in')].every(i => i.value.trim());
+  document.getElementById('start-btn').disabled = !all;
+}
+
+function startBattle() {
+  const inputs = [...document.querySelectorAll('.url-in')];
+  G.playerHand = inputs.map(i => ({ url: i.value.trim(), power: calcPower(i.value) }));
+
+  const pool = [...CPU_POOL].sort(() => Math.random() - .5).slice(0, 5);
+  G.cpuHand = pool.map(url => ({ url, power: calcPower(url) }));
+
+  G.selected = null;
+  G.round = 0;
+  G.scores = { p: 0, c: 0 };
+  G.history = [];
+
+  showPhase('battle');
+  nextRound();
+}
+
+// ──────────────────────────────────────────
+//  BATTLE フェーズ
+// ──────────────────────────────────────────
+function nextRound() {
+  G.round++;
+  G.selected = null;
+  G.revealed = false;
+
+  document.getElementById('round-n').textContent = `${G.round} / 5`;
+  document.getElementById('score-p').textContent = G.scores.p;
+  document.getElementById('score-c').textContent = G.scores.c;
+  document.getElementById('round-result').textContent = '';
+  document.getElementById('round-result').className = 'round-result';
+
+  const btn = document.getElementById('action-btn');
+  btn.textContent = '⚔ BATTLE';
+  btn.disabled = true;
+  btn.onclick = doBattle;
+
+  document.getElementById('arena-p').innerHTML = '<div class="arena-ph">カードを選択</div>';
+  document.getElementById('arena-p').className = 'arena-slot ps';
+  document.getElementById('arena-c').innerHTML = '<div class="arena-ph">???</div>';
+  document.getElementById('arena-c').className = 'arena-slot cs';
+
+  renderHand();
+}
+
+function renderHand() {
+  const wrap = document.getElementById('hand');
+  wrap.innerHTML = '';
+  G.playerHand.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'card' + (G.selected === i ? ' selected' : '');
+    el.innerHTML = `
+      <div class="card-url">${card.url}</div>
+      <div class="card-pwr">${card.power}</div>
+      <div class="card-pwr-lbl">POWER</div>`;
+    el.onclick = () => selectCard(i);
+    wrap.appendChild(el);
+  });
+}
+
+function selectCard(i) {
+  if (G.revealed) return;
+  G.selected = i;
+  const card = G.playerHand[i];
+  document.getElementById('arena-p').innerHTML =
+    `<div class="arena-url">${card.url}</div><div class="arena-pwr p">${card.power}</div>`;
+  document.getElementById('action-btn').disabled = false;
+  renderHand();
+}
+
+function doBattle() {
+  if (G.selected === null) return;
+  G.revealed = true;
+
+  const pCard = G.playerHand[G.selected];
+  const cpuIdx = Math.floor(Math.random() * G.cpuHand.length);
+  const cCard = G.cpuHand[cpuIdx];
+
+  G.playerHand.splice(G.selected, 1);
+  G.cpuHand.splice(cpuIdx, 1);
+
+  const winner = pCard.power > cCard.power ? 'p' : cCard.power > pCard.power ? 'c' : 'draw';
+  if (winner === 'p') G.scores.p++;
+  else if (winner === 'c') G.scores.c++;
+  G.history.push({ pCard, cCard, winner });
+
+  // アリーナ更新
+  const ap = document.getElementById('arena-p');
+  ap.innerHTML = `<div class="arena-url">${pCard.url}</div><div class="arena-pwr ${winner === 'p' ? 'w' : 'p'}">${pCard.power}</div>`;
+  ap.className = 'arena-slot ps pop ' + (winner === 'p' ? 'win' : winner === 'c' ? 'lose' : 'draw');
+
+  const ac = document.getElementById('arena-c');
+  ac.innerHTML = `<div class="arena-url">${cCard.url}</div><div class="arena-pwr ${winner === 'c' ? 'w' : 'c'}">${cCard.power}</div>`;
+  ac.className = 'arena-slot cs pop ' + (winner === 'c' ? 'win' : winner === 'p' ? 'lose' : 'draw');
+
+  // ラウンド結果
+  const rr = document.getElementById('round-result');
+  if (winner === 'p')    { rr.textContent = '✓ WIN';    rr.className = 'round-result win'; }
+  else if (winner === 'c') { rr.textContent = '✗ LOSE'; rr.className = 'round-result lose'; }
+  else                    { rr.textContent = '— DRAW —'; rr.className = 'round-result draw'; }
+
+  document.getElementById('score-p').textContent = G.scores.p;
+  document.getElementById('score-c').textContent = G.scores.c;
+
+  renderHand();
+
+  const btn = document.getElementById('action-btn');
+  btn.disabled = false;
+  if (G.round >= 5) {
+    btn.textContent = '▶ RESULT を見る';
+    btn.onclick = showResult;
+  } else {
+    btn.textContent = '▶ NEXT ROUND';
+    btn.onclick = nextRound;
+  }
+}
+
+// ──────────────────────────────────────────
+//  RESULT フェーズ
+// ──────────────────────────────────────────
+function showResult() {
+  const { p, c } = G.scores;
+  const title = document.getElementById('result-title');
+  if (p > c)      { title.textContent = 'YOU WIN';  title.className = 'result-title win'; }
+  else if (c > p) { title.textContent = 'YOU LOSE'; title.className = 'result-title lose'; }
+  else            { title.textContent = 'DRAW';     title.className = 'result-title draw'; }
+  document.getElementById('result-score').textContent = `PLAYER ${p} — CPU ${c}`;
+
+  document.getElementById('history-rows').innerHTML = G.history.map((h, i) => `
+    <div class="hrow ${h.winner === 'p' ? 'wr' : h.winner === 'c' ? 'lr' : ''}">
+      <div>
+        <div class="h-rnd">ROUND ${i + 1} — PLAYER</div>
+        <div class="h-url ${h.winner === 'p' ? 'w' : ''}">${h.pCard.url}</div>
+        <div class="h-pwr p">${h.pCard.power}</div>
+      </div>
+      <div class="h-mid">
+        <span class="hbadge ${h.winner === 'p' ? 'win' : h.winner === 'c' ? 'lose' : 'draw'}">
+          ${h.winner === 'p' ? 'WIN' : h.winner === 'c' ? 'LOSE' : 'DRAW'}
+        </span>
+        <div style="margin-top:6px;font-size:.6rem;color:var(--dim)">VS</div>
+      </div>
+      <div style="text-align:right">
+        <div class="h-rnd">CPU</div>
+        <div class="h-url ${h.winner === 'c' ? 'w' : ''}">${h.cCard.url}</div>
+        <div class="h-pwr c">${h.cCard.power}</div>
+      </div>
+    </div>`).join('');
+
+  showPhase('result');
+}
+
+// ──────────────────────────────────────────
+//  ユーティリティ
+// ──────────────────────────────────────────
+function showPhase(name) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(`phase-${name}`).classList.add('active');
+}
+
+function resetGame() {
+  showPhase('setup');
+  initInputs();
+}
+
+initInputs();
+</script>
+</body>
+</html>
